@@ -5,8 +5,19 @@
 #include <map>
 #include <vector>
 #include <fstream>
+#include <stdlib.h>
 std::map<std::string, SOCKET> Connections;
 std::vector<std::string> userList;
+std::fstream userFile, userInforFile;
+
+//save users to file
+void saveAllUsers() {
+	userFile.open("user.txt", std::ios::out);
+	for (int i = 0; i < userList.size(); i++)
+		userFile << userList[i] << std::endl;
+	userFile.close();
+}
+
 // remove user from list
 void removeList(std::string user) { 
 	std::map<std::string, SOCKET>::iterator it = Connections.find(user);
@@ -14,14 +25,28 @@ void removeList(std::string user) {
 		Connections.erase(it);
 }
 
+//split array of char
+std::vector<std::string> splitArrayOfChar(char message[2048], std::vector<std::string> abc) {
+	char* p;
+	int index = 0;
+	char* next_token = NULL;
+	p = strtok_s(message, ",", &next_token);
+	while (p != NULL) {
+		abc.push_back(std::string(p));
+		p = strtok_s(NULL, ",", &next_token);
+	}
+	return abc;
+}
+
+
 void initializeUser() {
-	std::fstream f;
-	f.open("user.txt", std::ios::in);
+	userFile.open("user.txt", std::ios::in);
 	std::string data;
-	while (!f.eof()) {
-		getline(f, data);
+	while (!userFile.eof()) {
+		getline(userFile, data);
 		userList.push_back(data);
 	}
+	userFile.close();
 }
 
 bool checkUser(std::string user) {
@@ -95,8 +120,8 @@ int main()
 		{
 			std::cout << "Failed to accept the client's connection." << std::endl;
 		}
-		else{
-			char temp[256];
+		else {
+			char temp[2048];
 			recv(newConnection, temp, sizeof(temp), 0);
 			std::cout << temp << std::endl;
 			if (checkUser(std::string(temp))) {
@@ -104,15 +129,25 @@ int main()
 				char msg[256] = "Connnection successfully";
 				send(newConnection, msg, sizeof(msg), 0);
 				Connections.insert(std::make_pair(std::string(temp), newConnection));
-				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)temp, NULL, NULL); 
+				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)temp, NULL, NULL);
 			}
 			else {
-				char mess[256] = "Check username again";
-				send(newConnection, mess, sizeof(mess), 0);
+				userList.push_back(std::string(temp));
+				saveAllUsers();
+				char msg[256] = "none";
+				send(newConnection, msg, sizeof(msg), 0);
+				if (recv(newConnection, temp, sizeof(temp), 0) > 0)
+					std::cout << temp << std::endl;
+				std::vector<std::string> infor = splitArrayOfChar(temp, infor);
+				userInforFile.open("userForList.txt", std::ios::out);
+				for (int i = 0; i < infor.size(); i++) {
+					std::cout << infor[i] << " " << std::endl;
+					userInforFile << infor[i] << std::endl;
+				}
+				userInforFile.close();
 			}
 		}
 	}
-
 	system("pause");
 	return 0;
 }

@@ -19,35 +19,7 @@ void ClientThread()
 	ExitThread(0);
 }
 
-int main()
-{
-	//Winsock Startup
-	WSAData wsaData;
-	WORD DllVersion = MAKEWORD(2, 1);
-	if (WSAStartup(DllVersion, &wsaData) != 0)
-	{
-		MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
-		return 0;
-	}
-	std::string ip = "127.0.0.1";
-	sockaddr_in addr; //Address to be binded to our Connection socket
-	int sizeofaddr = sizeof(addr); //Need sizeofaddr for the connect function
-	inet_pton(AF_INET, ip.c_str(), &addr.sin_addr); //Address = localhost (this pc)
-	addr.sin_port = htons(1111); //Port = 1111
-	addr.sin_family = AF_INET; //IPv4 Socket
-
-	Connection = socket(AF_INET, SOCK_STREAM, 0); //Set Connection socket
-	if (connect(Connection, (SOCKADDR*)&addr, sizeof(addr)) != 0) //If we are unable to connect...
-	{
-		MessageBoxA(NULL, "Failed to Connect", "Error", MB_OK | MB_ICONERROR);
-		return 0; //Failed to Connect
-	}
-	
-	User user;
-	user.writeUser();
-	char temp[256];
-	strcpy_s(temp, user.getUsername());
-	send(Connection, temp, sizeof(temp), 0);
+void process(char temp[256]) {
 	if (recv(Connection, temp, sizeof(temp), 0) > 0) {
 		std::cout << temp << std::endl;
 		if (strcmp(temp, "Connnection successfully") == 0) {
@@ -73,6 +45,69 @@ int main()
 	else {
 		recv(Connection, temp, sizeof(temp), 0);
 		std::cout << temp << std::endl;
+	}
+}
+
+int main()
+{
+	//Winsock Startup
+	WSAData wsaData;
+	WORD DllVersion = MAKEWORD(2, 1);
+	if (WSAStartup(DllVersion, &wsaData) != 0)
+	{
+		MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
+		return 0;
+	}
+	std::string ip = "127.0.0.1";
+	sockaddr_in addr; //Address to be binded to our Connection socket
+	int sizeofaddr = sizeof(addr); //Need sizeofaddr for the connect function
+	inet_pton(AF_INET, ip.c_str(), &addr.sin_addr); //Address = localhost (this pc)
+	addr.sin_port = htons(1111); //Port = 1111
+	addr.sin_family = AF_INET; //IPv4 Socket
+
+	Connection = socket(AF_INET, SOCK_STREAM, 0); //Set Connection socket
+	if (connect(Connection, (SOCKADDR*)&addr, sizeof(addr)) != 0) //If we are unable to connect...
+	{
+		MessageBoxA(NULL, "Failed to connect", "Error", MB_OK | MB_ICONERROR);
+		return 0; //Failed to Connect
+	}
+	
+	User user;
+	int choose;
+	std::cout << "If you don't have account, enter 0 to register.\nElse if you have account, enter 1 to log in" << std::endl;
+	std::cout << "Your choice: " << std::endl;
+	std::cin >> choose;
+	if (choose == 0) {
+		user.create();
+		char temp[2048];
+		strcpy_s(temp, user.getUsername());
+		send(Connection, temp, sizeof(temp), 0);
+		if (recv(Connection, temp, sizeof(temp), 0) > 0) {
+			if (strcmp(temp, "none") == 0) {
+				ZeroMemory(temp, sizeof(temp));
+				strcat_s(temp, user.getUsername());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getFullname());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getGender());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getDateOfBirth());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getType());
+				puts(temp);
+				send(Connection, temp, sizeof(temp), 0);
+			}
+			else {
+				std::cout << temp << std::endl;
+			}
+		}
+	}
+	else if (choose == 1) {
+		user.writeUser();
+		char temp[256];
+		strcpy_s(temp, user.getUsername());
+		send(Connection, temp, sizeof(temp), 0);
+		process(temp);
 	}
 	return 0;
 }

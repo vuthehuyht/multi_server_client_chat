@@ -6,16 +6,20 @@ class User
 {
 public:
 	User();
-	User(char username[], char fullname[], string dateOfBirth_, int age_, char hometown_[]);
+	User(char username_[], char fullname_[], char gender_[], char dateOfBirth_[], char type_[]);
 	~User();
 	void create();
 	char* getUsername();
+	char* getFullname();
+	char* getGender();
+	char* getDateOfBirth();
+	char* getType();
 	void writeUser();
 private:
-	char userName[100];
-	char fullName[100];
-	string dateOfBirth;
-	int age;
-	char homeTown[256];
+	char userName[30];
+	char fullName[30];
+	char gender[5];
+	char dateOfBirth[12];
+	char type[5];
 };
 
