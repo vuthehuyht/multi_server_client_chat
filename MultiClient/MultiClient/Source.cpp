@@ -4,7 +4,7 @@
 #include <iostream> //For std::cout, std::endl, std::cin.getline
 #include <WS2tcpip.h>
 #include "User.h"
-#include <string.h>
+#include <string>
 
 SOCKET Connection;//This client's connection to the server
 
@@ -17,35 +17,6 @@ void ClientThread()
 		std::cout << buffer << std::endl; //print out buffer
 	}
 	ExitThread(0);
-}
-
-void process(char temp[256]) {
-	if (recv(Connection, temp, sizeof(temp), 0) > 0) {
-		std::cout << temp << std::endl;
-		if (strcmp(temp, "Connnection successfully") == 0) {
-			CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientThread, NULL, NULL, NULL);
-			char buffer[256]; //256 char buffer to send message
-			while (true)
-			{
-				std::cin.getline(buffer, sizeof(buffer)); //Get line if user presses enter and fill the buffer
-				if (strcmp(buffer, "pp") != 0) {
-					send(Connection, buffer, sizeof(buffer), NULL); //Send buffer
-					Sleep(10);
-				}
-				else {
-					std::cout << "Exitting...." << std::endl;
-					char msg[256] = "pp";
-					send(Connection, msg, sizeof(msg), 0);
-					break;
-					exit(1);
-				}
-			}
-		}
-	}
-	else {
-		recv(Connection, temp, sizeof(temp), 0);
-		std::cout << temp << std::endl;
-	}
 }
 
 int main()
@@ -106,8 +77,33 @@ int main()
 		user.writeUser();
 		char temp[256];
 		strcpy_s(temp, user.getUsername());
+		ZeroMemory(temp, sizeof(temp));
 		send(Connection, temp, sizeof(temp), 0);
-		process(temp);
+		if (recv(Connection, temp, sizeof(temp), 0) > 0) {
+			std::cout << temp << std::endl;
+			if (strcmp(temp, "Connnection successfully") == 0) {
+				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientThread, NULL, NULL, NULL);
+				char buffer[256]; //256 char buffer to send message
+				while (true)
+				{
+					std::cin.getline(buffer, sizeof(buffer)); //Get line if user presses enter and fill the buffer
+					if (strcmp(buffer, "pp") != 0) {
+						send(Connection, buffer, sizeof(buffer), NULL); //Send buffer
+					}
+					else {
+						std::cout << "Exitting...." << std::endl;
+						char msg[256] = "pp";
+						send(Connection, msg, sizeof(msg), 0);
+						break;
+						exit(1);
+					}
+				}
+			}
+		}
+		else {
+			recv(Connection, temp, sizeof(temp), 0);
+			std::cout << temp << std::endl;
+		}
 	}
 	return 0;
 }

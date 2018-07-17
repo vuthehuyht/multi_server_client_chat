@@ -5,10 +5,58 @@
 #include <map>
 #include <vector>
 #include <fstream>
-#include <stdlib.h>
-std::map<std::string, SOCKET> Connections;
-std::vector<std::string> userList;
+#include "UserInformation.h"
+
+std::map<std::string, SOCKET> Connections; // connection list
+
+std::vector<std::string> userList;  // user list
+std::vector<UserInformation> usersList;  //user information list
+
 std::fstream userFile, userInforFile;
+
+//save user information to the file
+void saveUserInforToFile() {
+	userInforFile.open("userForList.txt", std::ios::app);  // append mode
+	if (userInforFile.fail())
+		std::cout << "Open fail!" << std::endl;
+	else {
+		for (std::vector<UserInformation>::iterator it = usersList.begin(); it != usersList.end(); it++) {
+			userInforFile << it->getUsername() << std::endl;
+			userInforFile << it->getFullname() << std::endl;
+			userInforFile << it->getGender() << std::endl;
+			userInforFile << it->getDateOfBirth() << std::endl;
+			userInforFile << it->getType() << std::endl;
+		}
+		userInforFile.close();
+	}
+}
+
+
+//add user information to the list
+void loadUserInforToList(std::string file_name) {
+	std::fstream f;
+	char data[30];
+	ZeroMemory(data, sizeof(data));
+	f.open(file_name, std::ios::out);
+	if (f.fail())
+		std::cout << "open fail!" << std::endl;
+	else {
+		while (!f.eof()) {
+			UserInformation user;
+			f.getline(data, 30);
+			if (strcmp(data, "") != 0) {
+				user.setUsername(data);
+				user.setFullName(data);
+				user.setGender(data);
+				user.setBirthday(data);
+				user.setType(data);
+				usersList.push_back(user);
+			}
+			else continue;
+		}
+		f.close();
+	}
+}
 
 //save users to file
 void saveAllUsers() {
@@ -19,7 +67,7 @@ void saveAllUsers() {
 }
 
 // remove user from list
-void removeList(std::string user) { 
+void removeList(std::string user) {
 	std::map<std::string, SOCKET>::iterator it = Connections.find(user);
 	if (it != Connections.end())
 		Connections.erase(it);
@@ -28,7 +76,6 @@ void removeList(std::string user) {
 //split array of char
 std::vector<std::string> splitArrayOfChar(char message[2048], std::vector<std::string> abc) {
 	char* p;
-	int index = 0;
 	char* next_token = NULL;
 	p = strtok_s(message, ",", &next_token);
 	while (p != NULL) {
@@ -44,11 +91,14 @@ void initializeUser() {
 	std::string data;
 	while (!userFile.eof()) {
 		getline(userFile, data);
-		userList.push_back(data);
+		if (data.compare("") != 0)
+			userList.push_back(data);
+		else continue;
 	}
 	userFile.close();
 }
 
+//check user is in list?
 bool checkUser(std::string user) {
 	for (std::vector<std::string>::iterator i = userList.begin(); i != userList.end(); i++)
 		if (i->compare(user) == 0)
@@ -56,8 +106,8 @@ bool checkUser(std::string user) {
 	return false;
 }
 
-void ClientHandlerThread(char* user) //index = the index in the SOCKET Connections array
-{
+//create thread with user login
+void ClientHandlerThread(char* user) {
 	char buffer[256]; //Buffer to receive and send out messages from/to the clients
 	std::string userTemp = user;
 	while (true)
@@ -112,7 +162,8 @@ int main()
 	listen(sListen, SOMAXCONN); //Places sListen socket in a state in which it is listening for an incoming connection. Note:SOMAXCONN = Socket Oustanding Max Connections
 
 	SOCKET newConnection; //Socket to hold the client's connection
-	initializeUser();
+	initializeUser();  // load username to list
+	loadUserInforToList("userForList.txt"); // load user information to the list
 	for (int i = 0; i < 100; i++)
 	{
 		newConnection = accept(sListen, (SOCKADDR*)&addr, &addrlen); //Accept a new connection
@@ -126,25 +177,42 @@ int main()
 			std::cout << temp << std::endl;
 			if (checkUser(std::string(temp))) {
 				std::cout << "Client Connected!" << std::endl;
-				char msg[256] = "Connnection successfully";
+				char msg[256] = "Connnection successfully"; //message sent client to notice connect sucessfully
 				send(newConnection, msg, sizeof(msg), 0);
 				Connections.insert(std::make_pair(std::string(temp), newConnection));
 				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)temp, NULL, NULL);
 			}
 			else {
-				userList.push_back(std::string(temp));
-				saveAllUsers();
-				char msg[256] = "none";
+				userList.push_back(std::string(temp)); //new user is added to the list user
+				saveAllUsers(); //save all user to file
+				char msg[256] = "none"; // this message notice to client, user isn't exist
 				send(newConnection, msg, sizeof(msg), 0);
-				if (recv(newConnection, temp, sizeof(temp), 0) > 0)
-					std::cout << temp << std::endl;
-				std::vector<std::string> infor = splitArrayOfChar(temp, infor);
-				userInforFile.open("userForList.txt", std::ios::out);
-				for (int i = 0; i < infor.size(); i++) {
-					std::cout << infor[i] << " " << std::endl;
-					userInforFile << infor[i] << std::endl;
+				if (recv(newConnection, temp, sizeof(temp), 0) > 0) {
+					std::vector<std::string> infor = splitArrayOfChar(temp, infor); // array of properties user
+					UserInformation user;
+					int i = 0;
+					char data_temp[30];
+					strcpy_s(data_temp, infor[i].c_str());
+					user.setUsername(data_temp);
+					i++; // i = 1
+					strcpy_s(data_temp, infor[i].c_str());
+					user.setFullName(data_temp);
+					i++; //i = 2
+					strcpy_s(data_temp, infor[i].c_str());
+					user.setGender(data_temp);
+					i++; //i = e
+					strcpy_s(data_temp, infor[i].c_str());
+					user.setBirthday(data_temp);
+					i++; // i = 4
+					strcpy_s(data_temp, infor[i].c_str());
+					user.setType(data_temp);
+					usersList.push_back(user);
+
+					std::cout << usersList.size() << std::endl;
+					for (int i = 0; i < usersList.size(); i++)
+						std::cout << usersList[i].getUsername() << std::endl;
+					saveUserInforToFile();
 				}
-				userInforFile.close();
 			}
 		}
 	}
