@@ -28,7 +28,6 @@ void removeList(std::string user) {
 //split array of char
 std::vector<std::string> splitArrayOfChar(char message[2048], std::vector<std::string> abc) {
 	char* p;
-	int index = 0;
 	char* next_token = NULL;
 	p = strtok_s(message, ",", &next_token);
 	while (p != NULL) {
