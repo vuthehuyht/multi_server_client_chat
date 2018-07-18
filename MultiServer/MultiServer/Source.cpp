@@ -108,7 +108,7 @@ bool checkUser(std::string user) {
 
 //create thread with user login
 void ClientHandlerThread(char* user) {
-	char buffer[256]; //Buffer to receive and send out messages from/to the clients
+	char buffer[2048]; //Buffer to receive and send out messages from/to the clients
 	std::string userTemp = user;
 	while (true)
 	{
@@ -119,6 +119,8 @@ void ClientHandlerThread(char* user) {
 				std::cout << "user:" << userTemp << ": " << buffer << std::endl;
 				for (it = Connections.begin(); it != Connections.end(); ++it) { // duyệt list
 					if (userTemp.compare(it->first) != 0) {
+						strcat_s(buffer, it->first.c_str());
+						strcat_s(buffer, ": ");
 						send(it->second, buffer, sizeof(buffer), 0); // gửi tới các user khác user truyền vào
 						std::cout << "Send user: " << it->first << ": " << buffer << std::endl;
 					}
@@ -208,9 +210,6 @@ int main()
 					user.setType(data_temp);
 					usersList.push_back(user);
 
-					std::cout << usersList.size() << std::endl;
-					for (int i = 0; i < usersList.size(); i++)
-						std::cout << usersList[i].getUsername() << std::endl;
 					saveUserInforToFile();
 				}
 			}
