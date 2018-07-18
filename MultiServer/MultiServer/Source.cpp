@@ -14,6 +14,8 @@ std::vector<UserInformation> usersList;  //user information list
 
 std::fstream userFile, userInforFile;
 
+char msgOK[5] = "OK";
+
 //save user information to the file
 void saveUserInforToFile() {
 	userInforFile.open("userForList.txt", std::ios::app);  // append mode
@@ -35,22 +37,48 @@ void saveUserInforToFile() {
 //add user information to the list
 void loadUserInforToList(std::string file_name) {
 	std::fstream f;
-	char data[30];
-	ZeroMemory(data, sizeof(data));
-	f.open(file_name, std::ios::out);
+	std::string data;
+	f.open(file_name, std::ios::in);
 	if (f.fail())
-		std::cout << "open fail!" << std::endl;
+		std::cout << "Open fail!" << std::endl;
 	else {
+		int i = 1;
+		
 		while (!f.eof()) {
+			getline(f, data);
 			UserInformation user;
-			f.getline(data, 30);
-			if (strcmp(data, "") != 0) {
-				user.setUsername(data);
-				user.setFullName(data);
-				user.setGender(data);
-				user.setBirthday(data);
-				user.setType(data);
-				usersList.push_back(user);
+			if (data.compare("") != 0) {
+				char data_temp[100];
+				ZeroMemory(data_temp, sizeof(data_temp));
+				strcpy_s(data_temp, data.c_str()); 
+				if (i == 1) {
+					user.setUsername(data_temp);
+					i++;
+					continue;
+				}
+				else if (i == 2) {
+					user.setFullName(data_temp);
+					i++;
+					continue;
+				}
+				else if (i == 3) {
+					user.setGender(data_temp);
+					i++;
+					continue;
+				}
+				else if (i == 4) {
+					user.setBirthday(data_temp);
+					i++;
+					continue;
+				}
+				else if (i == 5) {
+					user.setType(data_temp);
+					i++;
+					if (i == 6) {
+						usersList.push_back(user);
+						i = 1;
+					}
+				}
 			}
 			else continue;
 		}
@@ -108,7 +136,7 @@ bool checkUser(std::string user) {
 
 //create thread with user login
 void ClientHandlerThread(char* user) {
-	char buffer[2048]; //Buffer to receive and send out messages from/to the clients
+	char buffer[1024]; //Buffer to receive and send out messages from/to the clients
 	std::string userTemp = user;
 	while (true)
 	{
@@ -116,13 +144,14 @@ void ClientHandlerThread(char* user) {
 		std::map<std::string, SOCKET>::iterator it;
 		if (recv(Connections[userTemp], buffer, sizeof(buffer), 0) > 0) {
 			if (strcmp(buffer, "pp") != 0) {
-				std::cout << "user:" << userTemp << ": " << buffer << std::endl;
+				std::cout << "User " << userTemp << ": " << buffer << std::endl;
 				for (it = Connections.begin(); it != Connections.end(); ++it) { // duyệt list
+					ZeroMemory(buffer, sizeof(buffer));
+					strcat_s(buffer, it->first.c_str());
+					strcat_s(buffer, ": ");
 					if (userTemp.compare(it->first) != 0) {
-						strcat_s(buffer, it->first.c_str());
-						strcat_s(buffer, ": ");
 						send(it->second, buffer, sizeof(buffer), 0); // gửi tới các user khác user truyền vào
-						std::cout << "Send user: " << it->first << ": " << buffer << std::endl;
+						std::cout << "Send user " << it->first << ": " << buffer << std::endl;
 					}
 				}
 			}
@@ -175,42 +204,62 @@ int main()
 		}
 		else {
 			char temp[2048];
-			recv(newConnection, temp, sizeof(temp), 0);
-			std::cout << temp << std::endl;
-			if (checkUser(std::string(temp))) {
-				std::cout << "Client Connected!" << std::endl;
-				char msg[256] = "Connnection successfully"; //message sent client to notice connect sucessfully
-				send(newConnection, msg, sizeof(msg), 0);
-				Connections.insert(std::make_pair(std::string(temp), newConnection));
-				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)temp, NULL, NULL);
+			recv(newConnection, temp, sizeof(temp), 0); // nhận về thông điệp lựa chọn
+			if (strcmp(temp, "1") == 0) {				//xác nhận
+				send(newConnection, msgOK, sizeof(msgOK), 0);		// gửi đi thông điệp xác nhận thành công
+				recv(newConnection, temp, sizeof(temp), 0);
+				if (checkUser(std::string(temp))) {
+					std::cout << "Client Connected!" << std::endl;
+					char msg[256] = "Connnection successfully"; //message sent client to notice connect sucessfully
+					send(newConnection, msg, sizeof(msg), 0);
+					Connections.insert(std::make_pair(std::string(temp), newConnection));
+					CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)temp, NULL, NULL);
+				}
+				else {
+					char mesErr[50] = "Username incorrect!Check again";
+					send(newConnection, mesErr, sizeof(mesErr), 0);
+				}
 			}
-			else {
-				userList.push_back(std::string(temp)); //new user is added to the list user
-				saveAllUsers(); //save all user to file
-				char msg[256] = "none"; // this message notice to client, user isn't exist
-				send(newConnection, msg, sizeof(msg), 0);
-				if (recv(newConnection, temp, sizeof(temp), 0) > 0) {
-					std::vector<std::string> infor = splitArrayOfChar(temp, infor); // array of properties user
-					UserInformation user;
-					int i = 0;
-					char data_temp[30];
-					strcpy_s(data_temp, infor[i].c_str());
-					user.setUsername(data_temp);
-					i++; // i = 1
-					strcpy_s(data_temp, infor[i].c_str());
-					user.setFullName(data_temp);
-					i++; //i = 2
-					strcpy_s(data_temp, infor[i].c_str());
-					user.setGender(data_temp);
-					i++; //i = e
-					strcpy_s(data_temp, infor[i].c_str());
-					user.setBirthday(data_temp);
-					i++; // i = 4
-					strcpy_s(data_temp, infor[i].c_str());
-					user.setType(data_temp);
-					usersList.push_back(user);
+			else if (strcmp(temp, "0") == 0) {
+				send(newConnection, msgOK, sizeof(msgOK), 0);
+				ZeroMemory(temp, sizeof(temp));
+				recv(newConnection, temp, sizeof(temp), 0);
+				if (checkUser(std::string(temp)) == FALSE) {
+					userList.push_back(std::string(temp)); //new user is added to the list user
+					saveAllUsers(); //save all user to file
+					char msg[256] = "none"; // this message notice to client, user isn't exist
+					send(newConnection, msg, sizeof(msg), 0);
+					if (recv(newConnection, temp, sizeof(temp), 0) > 0) {
+						std::vector<std::string> infor = splitArrayOfChar(temp, infor); // array of properties user
+						UserInformation user;
+						int i = 0;
+						char data_temp[30];
+						strcpy_s(data_temp, infor[i].c_str());
+						user.setUsername(data_temp);
+						i++; // i = 1
+						strcpy_s(data_temp, infor[i].c_str());
+						user.setFullName(data_temp);
+						i++; //i = 2
+						strcpy_s(data_temp, infor[i].c_str());
+						user.setGender(data_temp);
+						i++; //i = e
+						strcpy_s(data_temp, infor[i].c_str());
+						user.setBirthday(data_temp);
+						i++; // i = 4
+						strcpy_s(data_temp, infor[i].c_str());
+						user.setType(data_temp);
+						usersList.push_back(user);
 
-					saveUserInforToFile();
+						std::cout << usersList.size() << std::endl;
+						for (int i = 0; i < usersList.size(); i++)
+							std::cout << usersList[i].getUsername() << std::endl;
+
+						saveUserInforToFile();
+					}
+				}
+				else {
+					char mesCheck[25] = "Username already exist!";
+					send(newConnection, mesCheck, sizeof(mesCheck), 0);
 				}
 			}
 		}

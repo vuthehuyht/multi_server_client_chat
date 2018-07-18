@@ -1,4 +1,6 @@
 ﻿  Source.cpp
-e:\lập trình socket\multi_server_client_chat\multiserver\multiserver\source.cpp(64): warning C4018: '<': signed/unsigned mismatch
-e:\lập trình socket\multi_server_client_chat\multiserver\multiserver\source.cpp(212): warning C4018: '<': signed/unsigned mismatch
+e:\lập trình socket\multi_server_client_chat\multiserver\multiserver\source.cpp(92): warning C4018: '<': signed/unsigned mismatch
+e:\lập trình socket\multi_server_client_chat\multiserver\multiserver\source.cpp(254): warning C4018: '<': signed/unsigned mismatch
+  UserInformation.cpp
+  Generating Code...
   MultiServer.vcxproj -> E:\Lập trình socket\multi_server_client_chat\MultiServer\Debug\MultiServer.exe

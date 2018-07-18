@@ -50,7 +50,7 @@ char* User::getType() {
 void User::writeUser() {
 	fflush(stdin);
 	cout << "Username: ";
-	gets_s(userName);
+	cin >> userName;
 }
 
 User::User()
