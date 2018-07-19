@@ -68,8 +68,6 @@ int main()
 					strcat_s(temp, user.getGender());
 					strcat_s(temp, ",");
 					strcat_s(temp, user.getDateOfBirth());
-					strcat_s(temp, ",");
-					strcat_s(temp, user.getType());
 					puts(temp);
 					send(Connection, temp, sizeof(temp), 0); // gửi đi chuỗi thông tin về username
 				}

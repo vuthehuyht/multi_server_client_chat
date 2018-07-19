@@ -14,11 +14,11 @@ std::vector<UserInformation> usersList;  //user information list
 
 std::fstream userFile, userInforFile;
 
-char msgOK[3] = "OK";
+char msgOK[3] = "OK";				// OK message
 
 //save user information to the file
 void saveUserInforToFile() {
-	userInforFile.open("userForList.txt", std::ios::app);  // append mode
+	userInforFile.open("userForList.txt", std::ios::out);  // append mode
 	if (userInforFile.fail())
 		std::cout << "Open fail!" << std::endl;
 	else {
@@ -27,7 +27,6 @@ void saveUserInforToFile() {
 			userInforFile << it->getFullname() << std::endl;
 			userInforFile << it->getGender() << std::endl;
 			userInforFile << it->getDateOfBirth() << std::endl;
-			userInforFile << it->getType() << std::endl;
 		}
 		userInforFile.close();
 	}
@@ -68,11 +67,6 @@ void loadUserInforToList(std::string file_name) {
 				}
 				else if (i == 4) {
 					user.setBirthday(data_temp);
-					i++;
-					continue;
-				}
-				else if (i == 5) {
-					user.setType(data_temp);
 					i++;
 					if (i == 6) {
 						usersList.push_back(user);
@@ -245,12 +239,9 @@ int main()
 						i++; //i = 2
 						strcpy_s(data_temp, infor[i].c_str());
 						user.setGender(data_temp);
-						i++; //i = e
+						i++; //i = 3
 						strcpy_s(data_temp, infor[i].c_str());
 						user.setBirthday(data_temp);
-						i++; // i = 4
-						strcpy_s(data_temp, infor[i].c_str());
-						user.setType(data_temp);
 						usersList.push_back(user);
 
 						std::cout << usersList.size() << std::endl;

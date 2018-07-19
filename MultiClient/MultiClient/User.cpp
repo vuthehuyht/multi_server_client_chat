@@ -1,11 +1,10 @@
 #include "User.h"
 
-User::User(char username_[], char fullname_[], char gender_[], char dateOfBirth_[], char type_[]) {
+User::User(char username_[], char fullname_[], char gender_[], char dateOfBirth_[]) {
 	strcpy_s(userName, username_);
 	strcpy_s(fullName, fullname_);
 	strcpy_s(gender, gender_);
 	strcpy_s(dateOfBirth, dateOfBirth_);
-	strcpy_s(type, type_);
 }
 
 void User::create() {
@@ -18,8 +17,6 @@ void User::create() {
 	cin >> gender;
 	cout << "Birthday: ";
 	cin >> dateOfBirth;
-	cout << "1. admin, 2. mod, 3. normal\nType:";
-	cin >> type;
 }
 
 char* User::getUsername() {
@@ -39,11 +36,6 @@ char* User::getGender() {
 
 char* User::getDateOfBirth() {
 	char* result = dateOfBirth;
-	return result;
-}
-
-char* User::getType() {
-	char* result = type;
 	return result;
 }
 
