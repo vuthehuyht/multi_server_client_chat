@@ -10,10 +10,11 @@ SOCKET Connection;//This client's connection to the server
 
 void ClientThread()
 {
-	char buffer[256]; //Create buffer to hold messages up to 256 characters
+	char buffer[1024]; //Create buffer to hold messages up to 256 characters
+	ZeroMemory(buffer, sizeof(buffer));
 	while (true)
 	{
-		recv(Connection, buffer, sizeof(buffer), NULL); //receive buffer
+		recv(Connection, buffer, sizeof(buffer), 0); //receive buffer
 		std::cout << buffer << std::endl; //print out buffer
 	}
 	ExitThread(0);
@@ -24,8 +25,7 @@ int main()
 	//Winsock Startup
 	WSAData wsaData;
 	WORD DllVersion = MAKEWORD(2, 1);
-	if (WSAStartup(DllVersion, &wsaData) != 0)
-	{
+	if (WSAStartup(DllVersion, &wsaData) != 0){
 		MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
 		return 0;
 	}
@@ -94,12 +94,14 @@ int main()
 				std::cout << temp << std::endl;
 				if (strcmp(temp, "Connnection successfully") == 0) {
 					CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientThread, NULL, NULL, NULL);
-					char buffer[256]; //256 char buffer to send message
-					ZeroMemory(buffer, sizeof(buffer));
 					while (true) {
-						std::cin.getline(buffer, sizeof(buffer)); //Get line if user presses enter and fill the buffer
-						if (strcmp(buffer, "pp") != 0) {
-							send(Connection, buffer, sizeof(buffer), 0); //Send buffer
+						char buffer[1024]; //256 char buffer to send message
+						ZeroMemory(buffer, sizeof(buffer));
+						std::cin.getline(buffer, sizeof(buffer));
+						if (strcmp(buffer, "pp") != 0 ) {
+							if (strcmp(buffer, "") != 0)
+								send(Connection, buffer, sizeof(buffer), 0); //Send buffer
+							else continue;
 						}
 						else {
 							std::cout << "Exitting...." << std::endl;

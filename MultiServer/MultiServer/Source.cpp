@@ -14,7 +14,7 @@ std::vector<UserInformation> usersList;  //user information list
 
 std::fstream userFile, userInforFile;
 
-char msgOK[5] = "OK";
+char msgOK[3] = "OK";
 
 //save user information to the file
 void saveUserInforToFile() {
@@ -146,11 +146,14 @@ void ClientHandlerThread(char* user) {
 			if (strcmp(buffer, "pp") != 0) {
 				std::cout << "User " << userTemp << ": " << buffer << std::endl;
 				for (it = Connections.begin(); it != Connections.end(); ++it) { // duyệt list
-					ZeroMemory(buffer, sizeof(buffer));
-					strcat_s(buffer, it->first.c_str());
-					strcat_s(buffer, ": ");
+					char buffer_temp[1024];
+					ZeroMemory(buffer_temp, sizeof(buffer_temp));
 					if (userTemp.compare(it->first) != 0) {
-						send(it->second, buffer, sizeof(buffer), 0); // gửi tới các user khác user truyền vào
+						strcat_s(buffer_temp, userTemp.c_str());
+						strcat_s(buffer_temp, ": ");
+						strcat_s(buffer_temp, buffer);
+						send(it->second, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
+						std::cout << buffer_temp << std::endl;
 						std::cout << "Send user " << it->first << ": " << buffer << std::endl;
 					}
 				}
@@ -203,14 +206,14 @@ int main()
 			std::cout << "Failed to accept the client's connection." << std::endl;
 		}
 		else {
-			char temp[2048];
+			char temp[1024];
 			recv(newConnection, temp, sizeof(temp), 0); // nhận về thông điệp lựa chọn
 			if (strcmp(temp, "1") == 0) {				//xác nhận
 				send(newConnection, msgOK, sizeof(msgOK), 0);		// gửi đi thông điệp xác nhận thành công
 				recv(newConnection, temp, sizeof(temp), 0);
 				if (checkUser(std::string(temp))) {
 					std::cout << "Client Connected!" << std::endl;
-					char msg[256] = "Connnection successfully"; //message sent client to notice connect sucessfully
+					char msg[30] = "Connnection successfully"; //message sent client to notice connect sucessfully
 					send(newConnection, msg, sizeof(msg), 0);
 					Connections.insert(std::make_pair(std::string(temp), newConnection));
 					CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)temp, NULL, NULL);
@@ -227,7 +230,7 @@ int main()
 				if (checkUser(std::string(temp)) == FALSE) {
 					userList.push_back(std::string(temp)); //new user is added to the list user
 					saveAllUsers(); //save all user to file
-					char msg[256] = "none"; // this message notice to client, user isn't exist
+					char msg[6] = "none"; // this message notice to client, user isn't exist
 					send(newConnection, msg, sizeof(msg), 0);
 					if (recv(newConnection, temp, sizeof(temp), 0) > 0) {
 						std::vector<std::string> infor = splitArrayOfChar(temp, infor); // array of properties user
