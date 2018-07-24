@@ -16,6 +16,15 @@ void UserInformation::setGender(char gender_[10]) {
 	strcpy_s(gender, gender_);
 }
 
+void UserInformation::setType(int num) {
+	if (num == 0)
+		strcpy_s(type, "admin");
+	else if (num == 1)
+		strcpy_s(type, "mod");
+	else if (num == 2)
+		strcpy_s(type, "normal");
+}
+
 char* UserInformation::getUsername() {
 	char* result = userName;
 	return result;
@@ -33,6 +42,11 @@ char* UserInformation::getGender() {
 
 char* UserInformation::getDateOfBirth() {
 	char* result = dateOfBirth;
+	return result;
+}
+
+char* UserInformation::getType() {
+	char* result = type;
 	return result;
 }
 

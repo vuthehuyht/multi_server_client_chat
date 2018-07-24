@@ -5,16 +5,44 @@
 #include <WS2tcpip.h>
 #include "User.h"
 #include <string>
+#include <vector>
 
 SOCKET Connection;//This client's connection to the server
+
+std::vector<std::string> splitMessage(char message[1024]) {
+	char* p;
+	char* next_token;
+	std::vector<std::string> result;
+
+	p = strtok_s(message, ".,", &next_token);
+	while (p != NULL) {
+		result.push_back(std::string(p));
+		p = strtok_s(NULL, ".,", &next_token);
+	}
+
+	return result;
+}
 
 void ClientThread()
 {
 	char buffer[1024]; //Create buffer to hold messages up to 256 characters
 	ZeroMemory(buffer, sizeof(buffer));
-	while (true)
-	{
+	while (true){
 		recv(Connection, buffer, sizeof(buffer), 0); //receive buffer
+		if (strcmp(buffer, "get_info") == 0) {
+			ZeroMemory(buffer, sizeof(buffer));
+			strcpy_s(buffer, "OK");
+			send(Connection, buffer, sizeof(buffer), 0); 
+			ZeroMemory(buffer, sizeof(buffer));
+			recv(Connection, buffer, sizeof(buffer), 0);
+
+			char buffer_temp[1024];
+			strcpy_s(buffer_temp, buffer);
+			std::vector<std::string> result = splitMessage(buffer_temp);
+			for (int i = 0; i < result.size(); i++)
+				std::cout << result[i] << std::endl;
+
+		} else 
 		std::cout << buffer << std::endl; //print out buffer
 	}
 	ExitThread(0);
@@ -55,30 +83,21 @@ int main()
 		if (recv(Connection, temp, sizeof(temp), 0) > 0) {
 			if (strcmp(temp, "OK") == 0) {					// xác nhận đã sẵn sàng thành công
 				user.create();
-				strcpy_s(temp, user.getUsername());
-				send(Connection, temp, sizeof(temp), 0);	// gửi đi tên user để kiểm tra
 				ZeroMemory(temp, sizeof(temp));
-				recv(Connection, temp, sizeof(temp), 0);
-				if (strcmp(temp, "none") == 0) {			// xác nhận username chưa có trên db
-					ZeroMemory(temp, sizeof(temp));
-					strcat_s(temp, user.getUsername());
-					strcat_s(temp, ",");
-					strcat_s(temp, user.getFullname());
-					strcat_s(temp, ",");
-					strcat_s(temp, user.getGender());
-					strcat_s(temp, ",");
-					strcat_s(temp, user.getDateOfBirth());
-					puts(temp);
-					send(Connection, temp, sizeof(temp), 0); // gửi đi chuỗi thông tin về username
-				}
-				else {
-					std::cout << temp << std::endl;
-				}
+				strcat_s(temp, user.getUsername());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getFullname());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getGender());
+				strcat_s(temp, ",");
+				strcat_s(temp, user.getDateOfBirth());
+				puts(temp);
+				send(Connection, temp, sizeof(temp), 0); // gửi đi chuỗi thông tin về username
 			}
 		}
 	}
 	else if (choose == 1) {									//lựa chọn đăng nhập
-		char temp[256];
+		char temp[1024];
 		strcpy_s(temp, "1");
 		send(Connection, temp, sizeof(temp), 0);			//gửi đi thông điệp đăng nhập
 		ZeroMemory(temp, sizeof(temp));

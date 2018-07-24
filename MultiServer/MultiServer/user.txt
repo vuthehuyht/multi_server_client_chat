@@ -2,10 +2,3 @@ mod
 demo
 abc
 huy
-demo1
-demo2
-123456789
-vuthehuyht
-username
-v.thehuy
-
