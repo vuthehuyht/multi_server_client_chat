@@ -14,11 +14,35 @@ static std::map<SOCKET, std::string> Connections; // connection list
 std::vector<std::string> userList;  // user list
 std::vector<UserInformation> usersList;  //user information list
 std::vector<std::string> kickOutUserList;	// user list is kicked
+std::vector<std::string> keywordList = {"/ban", "/unban", "/info", "/mod", "/unmod", "/filter", "/unfilter", "@all"};
 
 std::fstream userFile, userInforFile;
 
 char msgOK[3] = "OK";				// OK message
 std::string userAdmin;				// admin user
+
+//check keyword
+bool checkKeyWord(char message[]) {
+	std::vector<std::string> mess;
+	char* p;
+	char* next_token = NULL;
+	p = strtok_s(message, ", ", &next_token);
+	while (p != NULL) {
+		mess.push_back(std::string(p));
+		p = strtok_s(NULL, ", ", &next_token);
+	}
+	delete[] p, next_token;
+
+	if (mess.size() != 2)
+		return true;
+	else {
+		std::vector<std::string>::iterator first = mess.begin();
+		for (int i = 0; i < keywordList.size(); i++)
+			if (first->compare(keywordList[i]) == 0)
+				return false;
+	}
+	return true;
+}
 
 
 //check amdmin
@@ -59,6 +83,8 @@ std::vector<std::string> splitMessage(char message[1024] ) {
 		result.push_back(std::string(p));
 		p = strtok_s(NULL, "., ", &next_token);
 	}
+
+	delete[] p, next_token;
 
 	return result;
 }
@@ -270,20 +296,25 @@ void ClientHandlerThread(SOCKET index) {
 		if (recv(index, buffer, sizeof(buffer), 0) > 0) {
 			char buffer_temp_1[1024];
 			strcpy_s(buffer_temp_1, buffer);
+			char buffer_temp_2[1024];
+			strcpy_s(buffer_temp_2, buffer);
 			if (strcmp(buffer_temp_1, "pp") != 0) {
 				std::cout << "User " << userTemp << ": " << buffer << std::endl;
-				checkMessage(buffer, index);
-				for (it = Connections.begin(); it != Connections.end(); ++it) { // duyệt list
-					char buffer_temp[1024];
-					ZeroMemory(buffer_temp, sizeof(buffer_temp));
-					if (userTemp.compare(it->second) != 0) {
-						strcat_s(buffer_temp, userTemp.c_str());
-						strcat_s(buffer_temp, ": ");
-						strcat_s(buffer_temp, buffer);
-						send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
-						std::cout << "Send user " << it->second << ": " << buffer << std::endl;
+				checkMessage(buffer_temp_1, index);
+				if (checkKeyWord(buffer_temp_2)) {
+					for (it = Connections.begin(); it != Connections.end(); ++it) { // duyệt list
+						char buffer_temp[1024];
+						ZeroMemory(buffer_temp, sizeof(buffer_temp));
+						if (userTemp.compare(it->second) != 0) {
+							strcat_s(buffer_temp, userTemp.c_str());
+							strcat_s(buffer_temp, ": ");
+							strcat_s(buffer_temp, buffer);
+							send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
+							std::cout << "Send user " << it->second << ": " << buffer << std::endl;
+						}
 					}
 				}
+
 			}
 			else {
 				if (checkAdmin(userTemp)) {
