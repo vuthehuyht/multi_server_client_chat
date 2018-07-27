@@ -1,5 +1,0 @@
-﻿  Source.cpp
-e:\network programing\multi_server_client_chat\multiclient\multiclient\source.cpp(42): warning C4018: '<': signed/unsigned mismatch
-  User.cpp
-  Generating Code...
-  MultiClient.vcxproj -> E:\Network Programing\multi_server_client_chat\MultiClient\Debug\MultiClient.exe

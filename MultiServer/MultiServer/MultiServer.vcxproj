@@ -121,6 +121,8 @@
     <ClCompile Include="UserInformation.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Admin.h" />
+    <ClInclude Include="UserData.h" />
     <ClInclude Include="UserInformation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

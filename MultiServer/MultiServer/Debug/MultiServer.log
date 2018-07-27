@@ -1,5 +1,0 @@
-﻿  Source.cpp
-e:\network programing\multi_server_client_chat\multiserver\multiserver\source.cpp(40): warning C4018: '<': signed/unsigned mismatch
-e:\network programing\multi_server_client_chat\multiserver\multiserver\source.cpp(244): warning C4018: '<': signed/unsigned mismatch
-e:\network programing\multi_server_client_chat\multiserver\multiserver\source.cpp(438): warning C4018: '<': signed/unsigned mismatch
-  MultiServer.vcxproj -> E:\Network Programing\multi_server_client_chat\MultiServer\Debug\MultiServer.exe
