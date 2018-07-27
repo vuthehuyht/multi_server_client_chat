@@ -6,7 +6,7 @@ class User
 {
 public:
 	User();
-	User(char username_[], char fullname_[], char gender_[], char dateOfBirth_[]);
+	User(char username_[], string fullname_, char gender_[], char dateOfBirth_[]);
 	~User();
 	void create();
 	char* getUsername();
@@ -16,7 +16,7 @@ public:
 	void writeUser();
 private:
 	char userName[31];
-	char fullName[30];
+	string fullName;
 	char gender[10];
 	char dateOfBirth[12];
 };

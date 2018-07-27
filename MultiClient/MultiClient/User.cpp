@@ -1,8 +1,8 @@
 #include "User.h"
 
-User::User(char username_[], char fullname_[], char gender_[], char dateOfBirth_[]) {
+User::User(char username_[], string fullname_, char gender_[], char dateOfBirth_[]) {
 	strcpy_s(userName, username_);
-	strcpy_s(fullName, fullname_);
+	fullName = fullname_;
 	strcpy_s(gender, gender_);
 	strcpy_s(dateOfBirth, dateOfBirth_);
 }
@@ -25,7 +25,10 @@ char* User::getUsername() {
 }
 
 char* User::getFullname() {
-	char* result = fullName;
+	char* result;
+	char res_temp[30];
+	strcpy_s(res_temp, fullName.c_str());
+	result = res_temp;
 	return result;
 }
 
