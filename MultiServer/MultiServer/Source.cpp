@@ -116,7 +116,7 @@ void checkMessage(char message[], SOCKET s) {
 						if (first->compare("/info") == 0)
 							ad.getData(first->data(), s, second->data(), userData);
 						else if (first->compare("/ban") == 0)
-							ad.kickOut(secon)
+							ad.kickOut(second->data(), kickOutList);
 						else if (first->compare("/unban") == 0) {
 							for (int i = 0; i < kickOutList.size(); i++) {
 								if (kickOutList[i].compare(second->data()) == 0)
