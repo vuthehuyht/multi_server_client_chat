@@ -1,7 +1,5 @@
 #pragma once
-#include <map>
-#include "UserData.h"
-
+#include "UserInformation.h"
 class Admin {
 public:
 
@@ -41,6 +39,25 @@ public:
 					}
 				}
 			}
+		}
+	}
+
+	void kickOut(std::string username, std::vector<std::string> kickedList) {
+		kickedList.push_back(username);
+	}
+
+	void unKickOut(std::string username, std::vector<std::string> kickedList) {
+		for (int i = 0; i < kickedList.size(); i++) {
+			if (kickedList[i].compare(username) == 0)
+				kickedList.erase(kickedList.begin() + i);
+		}
+
+	}
+
+	void giveModUser(std::string username, std::vector<UserInformation> userData) {
+		for (std::vector<UserInformation>::iterator i = userData.begin(); i != userData.end(); i++) {
+			if (username.compare(i->getUsername()) == 0)
+				i->setType(1);
 		}
 	}
 

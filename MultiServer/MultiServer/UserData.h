@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <map>
 #include "UserInformation.h"
 
 class UserData {
@@ -88,7 +89,7 @@ public:
 
 	bool checkExistedUser(std::string user) {
 		for (std::vector<UserInformation>::iterator i = userData.begin(); i != userData.end(); i++)
-			if (user.compare(std::string(i->getUsername())))
+			if (user.compare(std::string(i->getUsername())) == 0)
 				return true;
 		return false;
 	}
@@ -120,6 +121,13 @@ public:
 		else {
 			char mesCheck[25] = "Username already exist!";
 			send(s, mesCheck, sizeof(mesCheck), 0);
+		}
+	}
+
+	void giveModUser(std::string username, std::vector<UserInformation> userData) {
+		for (std::vector<UserInformation>::iterator i = userData.begin(); i != userData.end(); i++) {
+			if (username.compare(i->getUsername()) == 0)
+				i->setType(1);
 		}
 	}
 private:

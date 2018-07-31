@@ -4,12 +4,55 @@
 
 static std::map<SOCKET, std::string> connection;			//connection list
 UserData data;
-std::vector<UserInformation> userData;						//user information list
-std::vector<std::string> kickOut;							//user list is kicked
+std::vector<UserInformation> userData;						//user information list 
+std::vector<std::string> kickOutList;							//user list is kicked
 std::vector<std::string> keyword = { "/ban", "/unban", "/info", "/mod", "/unmod", "/filter", "/unfilter", "@all" };
+std::vector<std::string> forbiddenWord;
 
 std::fstream inforFile;
 char msgOK[] = "OK";
+
+//check forbidden word
+bool checkForbiddenWord(std::string word) {
+	for (int i = 0; i < forbiddenWord.size(); i++)
+		if (word.compare(forbiddenWord[i]) == 0)
+			return true;
+	return false;
+}
+
+// save forbidden word is upadated to file
+void saveForbiddenWord() {
+	std::fstream f;
+	f.open("forbiddenword.txt", std::ios::out);
+	for (int i = 0; i < forbiddenWord.size(); i++)
+		f << forbiddenWord[i] << std::endl;
+	f.close();
+}
+
+//get forbidden word to the list
+void loadForbiddenWord() {
+	std::string data;
+	std::fstream f;
+	f.open("forbiddenword.txt", std::ios::in);
+	if (f.fail())
+		std::cout << "Opening file fail" << std::endl;
+	else {
+		while (!f.eof()) {
+			getline(f, data);
+			forbiddenWord.push_back(data);
+		}
+	}
+	f.close();
+}
+
+//check username is in kickout list, isn't it
+bool checkKickedUsername(std::string username) {
+	for (int i = 0; i < kickOutList.size(); i++) {
+		if (kickOutList[i].compare(username) == 0)
+			return false;
+	}
+	return true;
+}
 
 // set normal user
 void setNormalUser(std::string user) {
@@ -19,7 +62,7 @@ void setNormalUser(std::string user) {
 	}
 }
 
-// set admin user
+// set admin user.
 void setAdmin(std::string user) {
 	for (std::vector<UserInformation>::iterator it = userData.begin(); it != userData.end(); it++) {
 		if (strcmp(it->getUsername(), user.c_str()) == 0)
@@ -59,8 +102,6 @@ bool checkKeyword(std::string text) {
 
 //check message
 void checkMessage(char message[], SOCKET s) {
-	char message_temp[1024];
-	strcpy_s(message_temp, message);
 	std::vector<std::string> splitedMessage = splitMessage(message);
 	if (splitedMessage.size() != 0) {
 		std::vector<std::string>::iterator first = splitedMessage.begin();
@@ -68,14 +109,59 @@ void checkMessage(char message[], SOCKET s) {
 
 		if (checkKeyword(first->data())) {
 			std::string username = connection[s];
+			Admin ad;
 			for (int i = 0; i < userData.size(); i++) {
 				if (strcmp(userData[i].getUsername(), username.c_str()) == 0) {
 					if (strcmp(userData[i].getType(), "admin") == 0) {
-						Admin ad;
-						ad.getData(first->data(), s, second->data(), userData);
+						if (first->compare("/info") == 0)
+							ad.getData(first->data(), s, second->data(), userData);
+						else if (first->compare("/ban") == 0)
+							ad.kickOut(secon)
+						else if (first->compare("/unban") == 0) {
+							for (int i = 0; i < kickOutList.size(); i++) {
+								if (kickOutList[i].compare(second->data()) == 0)
+									kickOutList.erase(kickOutList.begin() + i);
+							}
+						}
+						else if (first->compare("/mod") == 0)
+							for (std::vector<UserInformation>::iterator i = userData.begin(); i != userData.end(); i++) {
+								if (second->compare(i->getUsername()) == 0)
+									i->setType(1);
+							}
+						else if (first->compare("/unmod") == 0) {
+							for (std::vector<UserInformation>::iterator i = userData.begin(); i != userData.end(); i++) {
+								if (second->compare(i->getUsername()) == 0)
+									i->setType(2);
+							}
+						}
+						else if (first->compare("/filter") == 0) {
+							forbiddenWord.push_back(second->data());
+							saveForbiddenWord();
+						}
+						else if (first->compare("/unfilter") == 0) {
+							for (int i = 0; i < forbiddenWord.size(); i++) {
+								if (forbiddenWord[i].compare(second->data()) == 0)
+									forbiddenWord.erase(forbiddenWord.begin() + i);
+							}
+							saveForbiddenWord();
+						}
+						
+					}
+					else if (strcmp(userData[i].getType(), "mod") == 0) {
+						if (first->compare("/filter") == 0) {
+							forbiddenWord.push_back(second->data());
+							saveForbiddenWord();
+						}
+						else if (first->compare("/unfilter") == 0) {
+							for (int i = 0; i < forbiddenWord.size(); i++) {
+								if (forbiddenWord[i].compare(second->data()) == 0)
+									forbiddenWord.erase(forbiddenWord.begin() + i);
+							}
+							saveForbiddenWord();
+						}
 					}
 					else {
-						char errMess[] = "You are not admin.";
+						char errMess[] = "You are not admin or mod.";
 						send(s, errMess, sizeof(errMess), 0);
 					}
 				}
@@ -84,15 +170,28 @@ void checkMessage(char message[], SOCKET s) {
 		else {
 			std::map<SOCKET, std::string>::iterator it;
 			std::string username = connection[s];
+			char completelyMesseage[1024];
+			ZeroMemory(completelyMesseage, sizeof(completelyMesseage));
+			for (int i = 0; i < splitedMessage.size(); i++) {
+				if (checkForbiddenWord(splitedMessage[i])) {
+					splitedMessage[i].replace(splitedMessage[i].begin(), splitedMessage[i].end(), "***");
+					strcat_s(completelyMesseage, splitedMessage[i].c_str());
+					strcat_s(completelyMesseage, " ");
+				}
+				else {
+					strcat_s(completelyMesseage, splitedMessage[i].c_str());
+					strcat_s(completelyMesseage, " ");
+				}
+			}
 			for (it = connection.begin(); it != connection.end(); ++it) {
 				char buffer_temp[1024];
 				ZeroMemory(buffer_temp, sizeof(buffer_temp));
-				if (username.compare(it->second) != 0) {
+				if (username.compare(it->second) != 0 && checkKickedUsername(it->second)) {
 					strcat_s(buffer_temp, username.c_str());
 					strcat_s(buffer_temp, ": ");
-					strcat_s(buffer_temp, message_temp);
+					strcat_s(buffer_temp, completelyMesseage);
 					send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
-					std::cout << "Send user " << it->second << ": " << message_temp << std::endl;
+					std::cout << "Send user " << it->second << ": " << completelyMesseage << std::endl;
 				}
 			}
 		}
@@ -114,12 +213,16 @@ void clientHandleThread(SOCKET s) {
 
 			if (strcmp(buffer_temp_1, "pp") != 0) {
 				std::cout << "User " << username << ": " << buffer << std::endl;
-				checkMessage(buffer_temp_2, s);
+				if (checkKickedUsername(username)) 
+					checkMessage(buffer_temp_2, s);
+				else {
+					char message[] = "You can't send this message";
+					send(s, message, sizeof(message), 0);
+				}
 			}
 			else {
 				std::vector<UserInformation>::iterator it = userData.begin();
 				if (strcmp(it->getUsername(), username.c_str())) {
-					
 					connection.erase(s);
 					std::cout << username << " exited!" << std::endl;
 					std::cout << "Size map after removing: " << connection.size() << std::endl;
@@ -162,6 +265,7 @@ int main() {
 
 	SOCKET newConnection; //Socket to hold the client's connection
 	userData = data.getUserData();
+	loadForbiddenWord();
 	while (connection.size() < 100) {
 		newConnection = accept(sListen, (SOCKADDR*)&addr, &addrlen); //Accept a new connection
 		if (newConnection == 0) //If accepting the client connection failed
