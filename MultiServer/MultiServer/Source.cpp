@@ -6,7 +6,7 @@ static std::map<SOCKET, std::string> connection;			//connection list
 UserData data;
 std::vector<UserInformation> userData;						//user information list 
 std::vector<std::string> kickOutList;							//user list is kicked
-std::vector<std::string> keyword = { "/ban", "/unban", "/info", "/mod", "/unmod", "/filter", "/unfilter", "@all" };
+std::vector<std::string> keyword = { "/ban", "/unban", "/info", "/mod", "/unmod", "/filter", "/unfilter"};
 std::vector<std::string> forbiddenWord;
 
 std::fstream inforFile;
@@ -72,9 +72,10 @@ void setAdmin(std::string user) {
 
 //check username
 bool checkUser(std::string username) {
-	for (int i = 0; i < userData.size(); i++)
-		if (username.compare(std::string(userData[i].getUsername())))
+	for (int i = 0; i < userData.size(); i++) {
+		if (username.compare(std::string(userData[i].getUsername())) == 0)
 			return true;
+	}
 	return false;
 }
 
@@ -115,8 +116,8 @@ void checkMessage(char message[], SOCKET s) {
 					if (strcmp(userData[i].getType(), "admin") == 0) {
 						if (first->compare("/info") == 0)
 							ad.getData(first->data(), s, second->data(), userData);
-						else if (first->compare("/ban") == 0)
-							ad.kickOut(second->data(), kickOutList);
+						else if (first->compare("/ban") == 0) 
+							kickOutList.push_back(second->data());
 						else if (first->compare("/unban") == 0) {
 							for (int i = 0; i < kickOutList.size(); i++) {
 								if (kickOutList[i].compare(second->data()) == 0)
@@ -170,28 +171,72 @@ void checkMessage(char message[], SOCKET s) {
 		else {
 			std::map<SOCKET, std::string>::iterator it;
 			std::string username = connection[s];
-			char completelyMesseage[1024];
-			ZeroMemory(completelyMesseage, sizeof(completelyMesseage));
-			for (int i = 0; i < splitedMessage.size(); i++) {
-				if (checkForbiddenWord(splitedMessage[i])) {
-					splitedMessage[i].replace(splitedMessage[i].begin(), splitedMessage[i].end(), "***");
-					strcat_s(completelyMesseage, splitedMessage[i].c_str());
-					strcat_s(completelyMesseage, " ");
+	
+			if (first->compare("@all") == 0) {
+				char completelyMesseage[1024];
+				ZeroMemory(completelyMesseage, sizeof(completelyMesseage));
+				for (int i = 1; i < splitedMessage.size(); i++) {
+					if (checkForbiddenWord(splitedMessage[i])) {
+						splitedMessage[i].replace(splitedMessage[i].begin(), splitedMessage[i].end(), "****");
+						strcat_s(completelyMesseage, splitedMessage[i].c_str());
+						strcat_s(completelyMesseage, " ");
+					}
+					else {
+						strcat_s(completelyMesseage, splitedMessage[i].c_str());
+						strcat_s(completelyMesseage, " ");
+					}
 				}
-				else {
-					strcat_s(completelyMesseage, splitedMessage[i].c_str());
-					strcat_s(completelyMesseage, " ");
+				for (it = connection.begin(); it != connection.end(); ++it) {
+					char buffer_temp[1024];
+					ZeroMemory(buffer_temp, sizeof(buffer_temp));
+					if (username.compare(it->second) != 0) {
+						strcat_s(buffer_temp, username.c_str());
+						strcat_s(buffer_temp, ": ");
+						strcat_s(buffer_temp, completelyMesseage);
+						send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
+						std::cout << "Send user " << it->second << ": " << completelyMesseage << std::endl;
+					}
 				}
 			}
-			for (it = connection.begin(); it != connection.end(); ++it) {
+			else if (first->compare("@all") != 0) {
+				char completelyMesseage[1024];
+				ZeroMemory(completelyMesseage, sizeof(completelyMesseage));
+				for (std::vector<std::string>::iterator i = splitedMessage.begin(); i != splitedMessage.end(); i++) {
+					if (checkForbiddenWord(i->data())) {
+						i->replace(i->begin(), i->end(), "****");
+						strcat_s(completelyMesseage, i->c_str());
+						strcat_s(completelyMesseage, " ");
+					}
+					else {
+						strcat_s(completelyMesseage, i->c_str());
+						strcat_s(completelyMesseage, " ");
+					}
+				}
 				char buffer_temp[1024];
 				ZeroMemory(buffer_temp, sizeof(buffer_temp));
-				if (username.compare(it->second) != 0 && checkKickedUsername(it->second)) {
+				for (it = connection.begin(); it != connection.end(); it++) {
+					char username_temp[128];
+					ZeroMemory(username_temp, sizeof(username_temp));
+					strcpy_s(username_temp, "@");
+					strcat_s(username_temp, it->second.data());
+
 					strcat_s(buffer_temp, username.c_str());
 					strcat_s(buffer_temp, ": ");
 					strcat_s(buffer_temp, completelyMesseage);
-					send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
-					std::cout << "Send user " << it->second << ": " << completelyMesseage << std::endl;
+					if (strcmp(username_temp, first->data()) == 0) {
+						send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
+						std::cout << "Send user " << it->second << ": " << completelyMesseage << std::endl;
+						ZeroMemory(buffer_temp, sizeof(buffer_temp));
+						char noticeMess[40] = "Note: You are mentioned in a message!";
+						send(it->first, noticeMess, sizeof(noticeMess), 0);
+					}
+					else  {
+						if (username.compare(it->second) != 0 && checkKickedUsername(it->second.data())) {
+							send(it->first, buffer_temp, sizeof(buffer_temp), 0); // gửi tới các user khác user truyền vào
+							std::cout << "Send user " << it->second << ": " << completelyMesseage << std::endl;
+						}
+						ZeroMemory(buffer_temp, sizeof(buffer_temp));
+					}
 				}
 			}
 		}
@@ -238,6 +283,7 @@ void clientHandleThread(SOCKET s) {
 		}
 		else {
 			std::cout << "Receive fail with error " << WSAGetLastError() << std::endl;
+			connection.erase(s);
 			std::cout << "Size map after removing: ";
 			std::cout << connection.size() << std::endl;
 			break;
@@ -267,11 +313,11 @@ int main() {
 	userData = data.getUserData();
 	loadForbiddenWord();
 	while (connection.size() < 100) {
+		std::cerr << "Waiting...." << std::endl;
 		newConnection = accept(sListen, (SOCKADDR*)&addr, &addrlen); //Accept a new connection
 		if (newConnection == 0) //If accepting the client connection failed
 		{
 			std::cout << "Failed to accept the client's connection." << std::endl;
-			std::cout << "x2  " << connection.size() << std::endl;
 		}
 		else {
 			char temp[1024];
